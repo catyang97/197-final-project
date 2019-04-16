@@ -1,17 +1,16 @@
 const THREE = require('three');
 import Noise from './Noise';
 var OrbitControls = require('./OrbitControls.js');
-var mergeBufferGeometries = require('./BufferGeometryUtils.js');
 var Stats = require('./stats.min.js');
-
 // if ( WEBGL.isWebGLAvailable() === false ) {
 //   document.body.appendChild( WEBGL.getWebGLErrorMessage() );
 //   document.getElementById( 'container' ).innerHTML = "";
 // }
 var container, stats;
-var camera, controls, scene, renderer;
+var camera, controls, scene, renderer, raycaster;
 var worldWidth = 128, worldDepth = 128;
 var data = heightField(worldWidth, worldDepth);
+var mouse = new THREE.Vector2(),INTERSECTED;
 loadScene();
 animate();
 
@@ -42,18 +41,10 @@ function loadScene() {
   var texture = new THREE.TextureLoader().load( 'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/minecraft/atlas.png' );
   texture.magFilter = THREE.NearestFilter;
   var material = new THREE.MeshBasicMaterial({ map: texture});
-  // var cube = new THREE.Mesh(geometry, material);
-  // scene.add(cube);
+  var geometry = new THREE.BoxBufferGeometry(1, 1, 1);
 
-
-  var matrix = new THREE.Matrix4();    
-  var geometries = [];
-
-  // for (let z = -worldDepth/2; z < worldDepth/2; z++) {
-  //   for (let x = -worldWidth/2; x < worldWidth/2; x++) {
-  for (let z = 0; z < 10; z++) {
-    for (let x = 0; x < 10; x++) {
-      var geometry = new THREE.BoxGeometry(1, 1, 1);
+  for (let z = -worldDepth/2; z < worldDepth/2; z++) {
+    for (let x = -worldWidth/2; x < worldWidth/2; x++) {
       var cube = new THREE.Mesh(geometry, material);
       cube.position.set(x,0,z);
       scene.add(cube);
@@ -62,8 +53,11 @@ function loadScene() {
 
   // Lights!
   var ambientLight = new THREE.AmbientLight( 0xcccccc );
-  scene.add( ambientLight );
+  scene.add(ambientLight);
 
+  // For mouse movement tracking
+  raycaster = new THREE.Raycaster();
+  document.addEventListener('mousedown', onDocumentMouseDown, false);
 }
 
 // Procedurally generate height of blocks at each point
@@ -71,12 +65,12 @@ function heightField(height, width) {
 
 }
 
-// function onWindowResize() {
-//   camera.aspect = window.innerWidth / window.innerHeight;
-//   camera.updateProjectionMatrix();
-//   renderer.setSize( window.innerWidth, window.innerHeight );
-//   controls.handleResize();
-// }
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize( window.innerWidth, window.innerHeight );
+  // controls.handleResize();
+}
 
 function animate() {
   requestAnimationFrame( animate );
@@ -86,5 +80,25 @@ function animate() {
 
 function render() {
   controls.update();
+
   renderer.render( scene, camera );
 }
+function onDocumentMouseDown(event) {
+  console.log('hi')
+  event.preventDefault();
+  mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+  mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+  raycaster.setFromCamera( mouse, camera );
+  var intersects = raycaster.intersectObjects(scene.children);
+  if ( intersects.length > 0 ) {
+    if ( INTERSECTED != intersects[ 0 ].object ) {
+      console.log("HELLO");
+      INTERSECTED = intersects[ 0 ].object;
+      scene.remove(INTERSECTED);
+    }
+  } else {
+    console.log("NOPE");
+  }
+}
+
