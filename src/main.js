@@ -30,7 +30,17 @@ var grassTopTexture = new THREE.TextureLoader().load('https://raw.githubusercont
 grassTopTexture.magFilter = THREE.NearestFilter;
 var grassTopMaterial = new THREE.MeshBasicMaterial({map: grassTopTexture});
 
-var waterTexture = new THREE.TextureLoader().load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/minecraft/grass.png');
+var grasses = [
+  material,
+  material,
+  grassTopMaterial,
+  material,
+  material,
+  material
+];
+var meshFaceMaterial = new THREE.MeshFaceMaterial(grasses);
+
+var waterTexture = new THREE.TextureLoader().load('https://raw.githubusercontent.com/catyang97/197-final-project/master/src/textures/water.jpg');
 waterTexture.magFilter = THREE.NearestFilter;
 var waterMaterial = new THREE.MeshBasicMaterial({map: waterTexture});
 
@@ -72,7 +82,7 @@ function loadScene() {
   // Add cube to scene
   for (let z = -worldDepth/2; z < worldDepth/2; z++) {
     for (let x = -worldWidth/2; x < worldWidth/2; x++) {
-      var cube = new THREE.Mesh(geometry, material);
+      var cube = new THREE.Mesh(geometry, meshFaceMaterial);
       cube.position.set(x,0,z);
       scene.add(cube);
     }
@@ -131,7 +141,7 @@ function onDocumentMouseDown(event) {
         var intPos = INTERSECTED.position;
         var cube;
         if (params.grass === true) {
-          cube = new THREE.Mesh(geometry, material);
+          cube = new THREE.Mesh(geometry, meshFaceMaterial);
         } else if (params.water === true) {
           cube = new THREE.Mesh(geometry, waterMaterial);
         } else if (params.dirt === true) {
