@@ -1,5 +1,4 @@
 const THREE = require('three');
-import Noise from './Noise';
 var OrbitControls = require('./OrbitControls.js');
 var Stats = require('./stats.min.js');
 var dat = require('./dat.gui.min.js');
@@ -9,8 +8,7 @@ var dat = require('./dat.gui.min.js');
 // }
 var container, stats;
 var camera, controls, scene, renderer, raycaster;
-var worldWidth = 128, worldDepth = 128;
-var data = heightField(worldWidth, worldDepth);
+var worldWidth = 64, worldDepth = 64;
 var mouse = new THREE.Vector2(),INTERSECTED;
 var deleteKey = false;
 var createKey = false;
@@ -70,7 +68,7 @@ function loadScene() {
 
   // Set up camera, scene
   camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 20000);
-  camera.position.set(-10, 10, -10);
+  camera.position.set(10, 10, 10);
   controls = new THREE.OrbitControls(camera); // Move through scene with mouse and arrow keys
   controls.update();
   controls.enablePan = true;
@@ -79,14 +77,7 @@ function loadScene() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xc5ecf9);
 
-  // Add cube to scene
-  for (let z = -worldDepth/2; z < worldDepth/2; z++) {
-    for (let x = -worldWidth/2; x < worldWidth/2; x++) {
-      var cube = new THREE.Mesh(geometry, meshFaceMaterial);
-      cube.position.set(x,0,z);
-      scene.add(cube);
-    }
-  }
+  createScene();
 
   // Lights!
   var ambientLight = new THREE.AmbientLight( 0xcccccc );
@@ -101,8 +92,22 @@ function loadScene() {
 }
 
 // Procedurally generate height of blocks at each point
-function heightField(height, width) {
+function createScene(height, width) {
+  // Add cubes to scene
+  for (let z = -worldDepth/2; z < worldDepth/2; z++) {
+    for (let x = -worldWidth/2; x < worldWidth/2; x++) {
+      var randHeight = getRandomNumber(0, 2);
+      for (var height = 0; height < randHeight; height++) {
+        var cube = new THREE.Mesh(geometry, meshFaceMaterial);
+        cube.position.set(x,height,z);
+        scene.add(cube);
+      }
+    }
+  }
+}
 
+function getRandomNumber(min, max) {
+  return Math.random() * (max - min) + min;
 }
 
 function onWindowResize() {
@@ -124,14 +129,14 @@ function render() {
 }
 function onDocumentMouseDown(event) {
   event.preventDefault();
-  mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-  mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-  raycaster.setFromCamera( mouse, camera );
+  raycaster.setFromCamera(mouse, camera);
   var intersects = raycaster.intersectObjects(scene.children);
-  if ( intersects.length > 0 ) {
-    if ( INTERSECTED != intersects[ 0 ].object ) {
-      INTERSECTED = intersects[ 0 ].object;
+  if (intersects.length > 0) {
+    if (INTERSECTED != intersects[0].object) {
+      INTERSECTED = intersects[0].object;
       if (deleteKey) {
         console.log(INTERSECTED.position);
         scene.remove(INTERSECTED);
