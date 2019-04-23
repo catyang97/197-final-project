@@ -75,7 +75,7 @@ function loadScene() {
   controls.enableZoom = true;
   controls.keyPanSpeed = 15.0;
   scene = new THREE.Scene();
-  var background = new THREE.TextureLoader().load('https://raw.githubusercontent.com/catyang97/197-final-project/master/src/clouds.jpg');
+  var background = new THREE.TextureLoader().load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/minecraft/dirt.png');
   scene.background = background;
 
   createScene();
