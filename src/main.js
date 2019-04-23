@@ -75,7 +75,8 @@ function loadScene() {
   controls.enableZoom = true;
   controls.keyPanSpeed = 15.0;
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xc5ecf9);
+  var background = new THREE.TextureLoader().load('sky.png');
+  scene.background = background;
 
   createScene();
 
