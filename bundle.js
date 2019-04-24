@@ -46,45 +46,29 @@
 
 	'use strict';
 	
-	var _Noise = __webpack_require__(1);
+	var THREE = __webpack_require__(1);
+	var OrbitControls = __webpack_require__(2);
+	var Stats = __webpack_require__(3);
+	var dat = __webpack_require__(5);
 	
-	var _Noise2 = _interopRequireDefault(_Noise);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	var THREE = __webpack_require__(2);
-	
-	var OrbitControls = __webpack_require__(3);
-	var Stats = __webpack_require__(4);
-	var dat = __webpack_require__(6);
-	// if ( WEBGL.isWebGLAvailable() === false ) {
-	//   document.body.appendChild( WEBGL.getWebGLErrorMessage() );
-	//   document.getElementById( 'container' ).innerHTML = "";
-	// }
 	var container, stats;
 	var camera, controls, scene, renderer, raycaster;
-	var worldWidth = 128,
-	    worldDepth = 128;
-	var data = heightField(worldWidth, worldDepth);
+	var worldWidth = 64,
+	    worldDepth = 64;
 	var mouse = new THREE.Vector2(),
 	    INTERSECTED;
 	var deleteKey = false;
 	var createKey = false;
-	var currBlock = 'water';
+	var currBlock = 'Grass';
 	var gui;
-	var params = {
-	  grass: true,
-	  water: false,
-	  dirt: false
-	};
 	
 	var texture = new THREE.TextureLoader().load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/minecraft/atlas.png');
 	texture.magFilter = THREE.NearestFilter;
-	var material = new THREE.MeshBasicMaterial({ map: texture });
+	var material = new THREE.MeshLambertMaterial({ map: texture });
 	
 	var grassTopTexture = new THREE.TextureLoader().load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/minecraft/grass.png');
 	grassTopTexture.magFilter = THREE.NearestFilter;
-	var grassTopMaterial = new THREE.MeshBasicMaterial({ map: grassTopTexture });
+	var grassTopMaterial = new THREE.MeshLambertMaterial({ map: grassTopTexture });
 	
 	var grasses = [material, material, grassTopMaterial, material, material, material];
 	var meshFaceMaterial = new THREE.MeshFaceMaterial(grasses);
@@ -112,30 +96,35 @@
 	  container.appendChild(stats.dom);
 	  container.appendChild(renderer.domElement);
 	
-	  gui = new dat.GUI();
-	  gui.add(params, 'grass').onChange(changeToGrass);
-	  gui.add(params, 'water').onChange(changeToWater);
-	  gui.add(params, 'dirt').onChange(changeToDirt);
-	
 	  // Set up camera, scene
 	  camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 20000);
-	  camera.position.set(-10, 10, -10);
-	  controls = new THREE.OrbitControls(camera); // Move through scene with mouse and arrow keys
+	  camera.position.set(10, 10, 10);
+	  controls = new THREE.OrbitControls(camera, renderer.domElement); // Move through scene with mouse and arrow keys
 	  controls.update();
 	  controls.enablePan = true;
 	  controls.enableZoom = true;
 	  controls.keyPanSpeed = 15.0;
 	  scene = new THREE.Scene();
-	  scene.background = new THREE.Color(0xc5ecf9);
+	  var background = new THREE.TextureLoader().load('https://raw.githubusercontent.com/catyang97/197-final-project/master/src/cloud.jpg');
+	  scene.background = background;
 	
-	  // Add cube to scene
-	  for (var z = -worldDepth / 2; z < worldDepth / 2; z++) {
-	    for (var x = -worldWidth / 2; x < worldWidth / 2; x++) {
-	      var cube = new THREE.Mesh(geometry, meshFaceMaterial);
-	      cube.position.set(x, 0, z);
-	      scene.add(cube);
+	  gui = new dat.GUI();
+	
+	  var params = {
+	    Brick_Type: 'Grass'
+	  };
+	
+	  gui.add(params, 'Brick_Type', ['Grass', 'Water', 'Dirt']).onChange(function (value) {
+	    if (value === 'Grass') {
+	      changeToGrass();
+	    } else if (value === 'Water') {
+	      changeToWater();
+	    } else {
+	      changeToDirt();
 	    }
-	  }
+	  });
+	
+	  createScene();
 	
 	  // Lights!
 	  var ambientLight = new THREE.AmbientLight(0xcccccc);
@@ -150,13 +139,29 @@
 	}
 	
 	// Procedurally generate height of blocks at each point
-	function heightField(height, width) {}
+	function createScene(height, width) {
+	  // Add cubes to scene
+	  for (var z = -worldDepth / 2; z < worldDepth / 2; z++) {
+	    for (var x = -worldWidth / 2; x < worldWidth / 2; x++) {
+	      var randHeight = getRandomNumber(0, 2);
+	      for (var height = 0; height < randHeight; height++) {
+	        var meshFaceMaterial = new THREE.MeshFaceMaterial(grasses);
+	        var cube = new THREE.Mesh(geometry, meshFaceMaterial);
+	        cube.position.set(x, height, z);
+	        scene.add(cube);
+	      }
+	    }
+	  }
+	}
+	
+	function getRandomNumber(min, max) {
+	  return Math.random() * (max - min) + min;
+	}
 	
 	function onWindowResize() {
 	  camera.aspect = window.innerWidth / window.innerHeight;
 	  camera.updateProjectionMatrix();
 	  renderer.setSize(window.innerWidth, window.innerHeight);
-	  // controls.handleResize();
 	}
 	
 	function animate() {
@@ -169,30 +174,34 @@
 	  controls.update();
 	  renderer.render(scene, camera);
 	}
+	
 	function onDocumentMouseDown(event) {
-	  event.preventDefault();
 	  mouse.x = event.clientX / window.innerWidth * 2 - 1;
 	  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 	
+	  // Clicking on blocks
 	  raycaster.setFromCamera(mouse, camera);
 	  var intersects = raycaster.intersectObjects(scene.children);
 	  if (intersects.length > 0) {
 	    if (INTERSECTED != intersects[0].object) {
 	      INTERSECTED = intersects[0].object;
 	      if (deleteKey) {
-	        console.log(INTERSECTED.position);
 	        scene.remove(INTERSECTED);
 	      }
 	      if (createKey) {
 	        // click mouse and add block on top
 	        var intPos = INTERSECTED.position;
 	        var cube;
-	        if (params.grass === true) {
-	          cube = new THREE.Mesh(geometry, meshFaceMaterial);
-	        } else if (params.water === true) {
-	          cube = new THREE.Mesh(geometry, waterMaterial);
-	        } else if (params.dirt === true) {
-	          cube = new THREE.Mesh(geometry, dirtMaterial);
+	
+	        if (currBlock === 'Grass') {
+	          var material = new THREE.MeshFaceMaterial(grasses);
+	          cube = new THREE.Mesh(geometry, material);
+	        } else if (currBlock === 'Water') {
+	          var material = new THREE.MeshBasicMaterial({ map: waterTexture });
+	          cube = new THREE.Mesh(geometry, material);
+	        } else if (currBlock === 'Dirt') {
+	          var material = new THREE.MeshBasicMaterial({ map: dirtTexture });
+	          cube = new THREE.Mesh(geometry, material);
 	        }
 	
 	        cube.position.set(intPos.x, intPos.y + 1, intPos.z);
@@ -222,117 +231,20 @@
 	  createKey = false;
 	}
 	
-	function changeToGrass(type) {
-	  if (type === true) {
-	    currBlock = 'grass';
-	    params.dirt = false;
-	    params.water = false;
-	  }
+	function changeToGrass() {
+	  currBlock = 'Grass';
 	}
 	
-	function changeToWater(type) {
-	  if (type === true) {
-	    currBlock = 'water';
-	    params.grass = false;
-	    params.dirt = false;
-	  }
+	function changeToWater() {
+	  currBlock = 'Water';
 	}
 	
-	function changeToDirt(type) {
-	  if (type === true) {
-	    currBlock = 'dirt';
-	    params.grass = false;
-	    params.water = false;
-	  }
+	function changeToDirt() {
+	  currBlock = 'Dirt';
 	}
 
 /***/ }),
 /* 1 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-	
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-	
-	// Noise functions from: http://mrl.nyu.edu/~perlin/noise/
-	var THREE = __webpack_require__(2);
-	
-	var Noise = function () {
-	    function Noise() {
-	        _classCallCheck(this, Noise);
-	
-	        this.p = [151, 160, 137, 91, 90, 15, 131, 13, 201, 95, 96, 53, 194, 233, 7, 225, 140, 36, 103, 30, 69, 142, 8, 99, 37, 240, 21, 10, 23, 190, 6, 148, 247, 120, 234, 75, 0, 26, 197, 62, 94, 252, 219, 203, 117, 35, 11, 32, 57, 177, 33, 88, 237, 149, 56, 87, 174, 20, 125, 136, 171, 168, 68, 175, 74, 165, 71, 134, 139, 48, 27, 166, 77, 146, 158, 231, 83, 111, 229, 122, 60, 211, 133, 230, 220, 105, 92, 41, 55, 46, 245, 40, 244, 102, 143, 54, 65, 25, 63, 161, 1, 216, 80, 73, 209, 76, 132, 187, 208, 89, 18, 169, 200, 196, 135, 130, 116, 188, 159, 86, 164, 100, 109, 198, 173, 186, 3, 64, 52, 217, 226, 250, 124, 123, 5, 202, 38, 147, 118, 126, 255, 82, 85, 212, 207, 206, 59, 227, 47, 16, 58, 17, 182, 189, 28, 42, 223, 183, 170, 213, 119, 248, 152, 2, 44, 154, 163, 70, 221, 153, 101, 155, 167, 43, 172, 9, 129, 22, 39, 253, 19, 98, 108, 110, 79, 113, 224, 232, 178, 185, 112, 104, 218, 246, 97, 228, 251, 34, 242, 193, 238, 210, 144, 12, 191, 179, 162, 241, 81, 51, 145, 235, 249, 14, 239, 107, 49, 192, 214, 31, 181, 199, 106, 157, 184, 84, 204, 176, 115, 121, 50, 45, 127, 4, 150, 254, 138, 236, 205, 93, 222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180];
-	
-	        for (var i = 0; i < 256; i++) {
-	            this.p[256 + i] = this.p[i];
-	        }
-	    }
-	
-	    _createClass(Noise, [{
-	        key: 'fade',
-	        value: function fade(t) {
-	            return t * t * t * (t * (t * 6 - 15) + 10);
-	        }
-	    }, {
-	        key: 'lerp',
-	        value: function lerp(t, a, b) {
-	            return a + t * (b - a);
-	        }
-	    }, {
-	        key: 'grad',
-	        value: function grad(hash, x, y, z) {
-	            var h = hash & 15;
-	            var u = h < 8 ? x : y,
-	                v = h < 4 ? y : h == 12 || h == 14 ? x : z;
-	            return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
-	        }
-	    }, {
-	        key: 'noise',
-	        value: function noise(x, y, z) {
-	            var floorX = Math.floor(x),
-	                floorY = Math.floor(y),
-	                floorZ = Math.floor(z);
-	
-	            var X = floorX & 255,
-	                Y = floorY & 255,
-	                Z = floorZ & 255;
-	
-	            x -= floorX;
-	            y -= floorY;
-	            z -= floorZ;
-	
-	            var xMinus1 = x - 1,
-	                yMinus1 = y - 1,
-	                zMinus1 = z - 1;
-	
-	            var u = this.fade(x),
-	                v = this.fade(y),
-	                w = this.fade(z);
-	
-	            var A = this.p[X] + Y,
-	                AA = this.p[A] + Z,
-	                AB = this.p[A + 1] + Z,
-	                B = this.p[X + 1] + Y,
-	                BA = this.p[B] + Z,
-	                BB = this.p[B + 1] + Z;
-	
-	            return this.lerp(w, this.lerp(v, this.lerp(u, this.grad(this.p[AA], x, y, z), this.grad(this.p[BA], xMinus1, y, z)), this.lerp(u, this.grad(this.p[AB], x, yMinus1, z), this.grad(this.p[BB], xMinus1, yMinus1, z))), this.lerp(v, this.lerp(u, this.grad(this.p[AA + 1], x, y, zMinus1), this.grad(this.p[BA + 1], xMinus1, y, z - 1)), this.lerp(u, this.grad(this.p[AB + 1], x, yMinus1, zMinus1), this.grad(this.p[BB + 1], xMinus1, yMinus1, zMinus1))));
-	        }
-	    }]);
-	
-	    return Noise;
-	}();
-	
-	exports.default = Noise;
-
-/***/ }),
-/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	(function (global, factory) {
@@ -48832,7 +48744,7 @@
 
 
 /***/ }),
-/* 3 */
+/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -48851,7 +48763,7 @@
 	//    Orbit - left mouse / touch: one-finger move
 	//    Zoom - middle mouse, or mousewheel / touch: two-finger spread or squish
 	//    Pan - right mouse, or left mouse + ctrl/meta/shiftKey, or arrow keys / touch: two-finger move
-	var THREE = __webpack_require__(2);
+	var THREE = __webpack_require__(1);
 	
 	THREE.OrbitControls = function (object, domElement) {
 	
@@ -49827,7 +49739,7 @@
 	});
 
 /***/ }),
-/* 4 */
+/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(module) {"use strict";
@@ -49877,10 +49789,10 @@
 	      c = Math.min(c, f);g = Math.max(g, f);b.fillStyle = l;b.globalAlpha = 1;b.fillRect(0, 0, r, m);b.fillStyle = k;b.fillText(e(f) + " " + h + " (" + e(c) + "-" + e(g) + ")", t, u);b.drawImage(q, d + a, m, n - a, p, d, m, n - a, p);b.fillRect(d + n - a, m, a, p);b.fillStyle = l;b.globalAlpha = .9;b.fillRect(d + n - a, m, a, e((1 - f / v) * p));
 	    } };
 	};"object" === ( false ? "undefined" : _typeof(module)) && (module.exports = Stats);
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)(module)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(4)(module)))
 
 /***/ }),
-/* 5 */
+/* 4 */
 /***/ (function(module, exports) {
 
 	module.exports = function(module) {
@@ -49896,7 +49808,7 @@
 
 
 /***/ }),
-/* 6 */
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(module) {"use strict";
@@ -50898,7 +50810,7 @@
 	    };
 	  }]);
 	});
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)(module)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(4)(module)))
 
 /***/ })
 /******/ ]);
