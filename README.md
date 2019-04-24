@@ -13,9 +13,7 @@
 ## How to "Play"
 - Create and Destroy Blocks
     - Destroy: Hold down the 'D' key and click on any block to delete.
-    - Create: Select what type of block from the menu in the top right corner.
-    Whatever box last ticked will be the selected block type (even if the others are
-    also ticked). Hold down the 'C' key and click on any block to create a block on top of it.
+    - Create: Select what type of block from the drop down menu in the top right corner. Hold down the 'C' key and click on any block to create a block on top of it.
 - Controls
     - Use the arrow keys to navigate the scene
     - Use the mouse to rotate around the scene
