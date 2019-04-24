@@ -7,7 +7,7 @@
     - npm run build
     - npm start
     - go to http://localhost:7000
-- (go to https://catherine-yang.com/197-final-project/ - If there's is a drop down menu, then the right version is deployed. Otherwise, run locally.)
+- (go to https://catherine-yang.com/197-final-project/ - If there's is a drop down menu, then the right version is deployed. If there are checkboxes, run locally.)
 
 ---
 ## How to "Play"
